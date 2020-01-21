@@ -1,10 +1,17 @@
+load("@graknlabs_bazel_distribution//common:rules.bzl", "assemble_targz", "java_deps")
+
+filegroup(
+    name = "simulation-files",
+    srcs = glob([
+        "data/*.yaml",
+        "schema/*.gql",
+    ]),
+)
+
 java_library(
     name = "simulation",
     srcs = glob(["*.java"]),
-    data = glob([
-        "schema/*.gql",
-        "data/*.yaml",
-    ]),
+    data = [":simulation-files"],
     resources = [
         "conf/logback.xml",
     ],
@@ -17,20 +24,30 @@ java_library(
         "//yaml_tool:yaml_tool",
         "//agents:agents",
     ],
+    visibility = ["//visibility:public"],
 )
 
 java_binary(
     name = "simulation-binary",
     main_class = "grakn.simulation.Simulation",
     runtime_deps = [":simulation"],
+    visibility = ["//:__pkg__"],
 )
 
-java_binary(
-    name = "simulation-binary-debug",
-    main_class = "grakn.simulation.Simulation",
-    runtime_deps = [":simulation"],
-    jvm_flags = [
-        "-Xdebug",
-        "-Xrunjdwp:transport=dt_socket,server=y,address=5005",
-    ]
+java_deps(
+    name = "simulation-deps",
+    target = ":simulation-binary",
+    java_deps_root = "lib/",
+    visibility = ["//visibility:public"],
+)
+
+assemble_targz(
+    name = "assemble-linux-targz",
+    output_filename = "grakn-simulation-linux",
+    targets = [":simulation-deps", "//bin:assemble-bash-targz"],
+    additional_files = {
+        "data/data.yaml": "data/data.yaml", # TODO fix this hack
+        "schema/schema.gql": "schema/schema.gql",
+    },
+    visibility = ["//visibility:public"],
 )

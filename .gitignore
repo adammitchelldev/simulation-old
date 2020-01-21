@@ -13,10 +13,6 @@ logs/
 .factorypath
 .grok*
 
-# Compiled files
-target/
-bin/
-
 # NPM
 node_modules/
 
